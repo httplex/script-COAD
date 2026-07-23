@@ -1,0 +1,7 @@
+data/
+tests/
+frontend/
+node_modules/
+__pycache__/
+*.pyc
+.venv/
