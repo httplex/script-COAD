@@ -4,10 +4,18 @@ import pandas as pd
 from fastapi import FastAPI, File, UploadFile
 from .parser import parse_document
 from .utils.path_utils import extrai_sei_do_caminho
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.responses import StreamingResponse
 
 app = FastAPI(title="COAD Parser API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):\d+",
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 TAMANHO_MAXIMO_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -65,3 +73,4 @@ async def exportar_documentos(arquivos: list[UploadFile] = File(...)) -> Streami
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=resultado.xlsx"},
     )
+
