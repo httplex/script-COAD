@@ -14,6 +14,7 @@ export function TelaUpload({ onProcessado }: Props) {
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const pastaInputRef = useRef<HTMLInputElement>(null)
 
   const adicionarArquivos = useCallback((novos: FileList | null) => {
     if (!novos) return
@@ -75,6 +76,18 @@ export function TelaUpload({ onProcessado }: Props) {
           className="hidden"
           onChange={(e) => adicionarArquivos(e.target.files)}
         />
+        <input
+          ref={pastaInputRef}
+          type="file"
+          // @ts-expect-error webkitdirectory não está nos tipos padrão do React/DOM
+          webkitdirectory=""
+          multiple
+          className="hidden"
+          onChange={(e) => adicionarArquivos(e.target.files)}
+        />
+        <Button variant="secondary" onClick={() => pastaInputRef.current?.click()}>
+          Escolher pasta
+        </Button>
         <Button variant="secondary" onClick={() => inputRef.current?.click()}>
           Escolher arquivos
         </Button>
