@@ -7,7 +7,7 @@ def parse_data(data_str: str) -> str | None:
     except ValueError:
         return None
 
-    return data.strftime("%Y-%m-%d")
+    return data.strftime("%d/%m/%Y")
 
 _ARTIGOS_MINUSCULOS = {"de", "da", "do", "das", "dos", "e"}
 

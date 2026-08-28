@@ -35,4 +35,4 @@ def test_extrai_numero_sei_do_titulo():
 def test_extrai_data_assinatura_do_rodape():
     html = "<p>Documento assinado eletronicamente por Fulano, em 22/07/2026, às 10:00</p>"
     soup = _soup(html)
-    assert extrai_data_assinatura(soup) == "2026-07-22"
+    assert extrai_data_assinatura(soup) == "22/07/2026"

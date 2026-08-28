@@ -33,3 +33,16 @@ def test_extrai_atividade_rotulo_sozinho_valor_na_proxima_linha():
 def test_extrai_atividade_retorna_none_quando_ausente():
     soup = _soup("<p>documento sem esse campo</p>")
     assert extrai_atividade(soup) is None
+
+
+def test_extrai_atividade_como_servico_a_ser_realizado():
+    html = """
+    <p class="Texto_Justificado">
+        · <b>SERVIÇO A SER REALIZADO: </b>Substituição da antena VHF,
+        substituição do transmissor e instalação de cabo.
+    </p>
+    """
+    soup = _soup(html)
+    assert extrai_atividade(soup) == (
+        "Substituição da antena VHF, substituição do transmissor e instalação de cabo."
+    )

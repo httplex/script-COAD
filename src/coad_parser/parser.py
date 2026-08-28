@@ -11,7 +11,7 @@ from .extractors.metadata import (
     extrai_numero_sei,
 )
 from .extractors.parties import extrai_cpf_cnpj, extrai_interessado
-from .extractors.uc import extrai_uc
+from .extractors.uc import extrai_uc, reconciliar_ucs
 from .schemas.document_data import DocumentData
 
 
@@ -26,7 +26,7 @@ def parse_document(html: str) -> DocumentData:
         numero_autorizacao=extrai_numero_autorizacao(soup),
         numero_processo=extrai_numero_processo(soup),
         numero_sei=numero_sei,
-        ucs_envolvidas=extrai_uc(soup),
+        ucs_envolvidas=reconciliar_ucs(extrai_uc(soup)),
         atividade=extrai_atividade(soup),
         interessado=extrai_interessado(soup),
         cpf_cnpj=extrai_cpf_cnpj(soup),

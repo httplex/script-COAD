@@ -8,7 +8,12 @@ def extrai_atividade(soup: BeautifulSoup) -> str | None:
     """
     Extrai a descrição da atividade/empreendimento.
     """
-    labels = ["Atividade/Empreendimento", "Atividade"]
+    labels = [
+        "Atividade/Empreendimento",
+        "Serviço a ser realizado",
+        "Atividade",
+    ]
+    padrao_rotulos = "|".join(re.escape(label) for label in labels)
 
     label_tag = None
     label_usado = None
@@ -46,7 +51,7 @@ def extrai_atividade(soup: BeautifulSoup) -> str | None:
                 texto = p.get_text(" ", strip=True)
                 return (
                     re.sub(
-                        r"^(Atividade/Empreendimento|Atividade)\s*:\s*",
+                        rf"^(?:{padrao_rotulos})\s*:\s*",
                         "",
                         texto,
                         flags=re.IGNORECASE,
@@ -59,7 +64,7 @@ def extrai_atividade(soup: BeautifulSoup) -> str | None:
         texto = prox_p.get_text(" ", strip=True)
         return (
             re.sub(
-                r"^(Atividade/Empreendimento|Atividade)\s*:\s*",
+                rf"^(?:{padrao_rotulos})\s*:\s*",
                 "",
                 texto,
                 flags=re.IGNORECASE,

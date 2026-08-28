@@ -27,6 +27,13 @@ def test_extrai_interessado_retorna_none_quando_ausente():
     assert extrai_interessado(soup) is None
 
 
+def test_extrai_interessado_como_autorizada():
+    soup = _soup(
+        '<p class="Texto_Justificado"><b>AUTORIZADA: </b>EMPRESA FICTICIA S.A</p>'
+    )
+    assert extrai_interessado(soup) == "Empresa Ficticia S.A."
+
+
 def test_extrai_cpf_formato_pessoa_fisica():
     soup = _soup("<p><strong>CPF/CNPJ</strong>: 111.222.333-44</p>")
     assert extrai_cpf_cnpj(soup) == "111.222.333-44"
@@ -34,6 +41,13 @@ def test_extrai_cpf_formato_pessoa_fisica():
 
 def test_extrai_cnpj_formato_pessoa_juridica():
     soup = _soup("<p><strong>CPF/CNPJ</strong>: 11.222.333/0001-44</p>")
+    assert extrai_cpf_cnpj(soup) == "11.222.333/0001-44"
+
+
+def test_extrai_cnpj_quando_rotulo_nao_contem_cpf():
+    soup = _soup(
+        '<p class="Texto_Justificado">· <b>CNPJ: </b>11.222.333/0001-44</p>'
+    )
     assert extrai_cpf_cnpj(soup) == "11.222.333/0001-44"
 
 

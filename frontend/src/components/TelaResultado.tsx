@@ -50,17 +50,10 @@ export function TelaResultado({ resultados, onVoltar }: Props) {
     setBaixando(true)
     setErroDownload(null)
     try {
-      const documentos = resultados
-        .filter((resultado) => resultado.sucesso)
-        .map((resultado) => ({
-          arquivo: resultado.arquivo,
-          dados: resultado.dados,
-        }))
-
       const resposta = await fetch(`${API_URL}/documents/export-results`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(documentos),
+        body: JSON.stringify(resultados),
       })
 
       if (!resposta.ok) {
