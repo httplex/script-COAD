@@ -4,14 +4,16 @@ import { Card } from "@/components/ui/card"
 import type { ResultadoDocumento } from "@/components/TelaResultado"
 
 const API_URL = "http://localhost:8000"
+const TAMANHO_LOTE = 250
 
 type Props = {
-  onProcessado: (resultados: ResultadoDocumento[], arquivos: File[]) => void
+  onProcessado: (resultados: ResultadoDocumento[]) => void
 }
 
 export function TelaUpload({ onProcessado }: Props) {
   const [arquivos, setArquivos] = useState<File[]>([])
   const [carregando, setCarregando] = useState(false)
+  const [processados, setProcessados] = useState(0)
   const [erro, setErro] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const pastaInputRef = useRef<HTMLInputElement>(null)
@@ -30,27 +32,63 @@ export function TelaUpload({ onProcessado }: Props) {
     [adicionarArquivos]
   )
 
-  const removerArquivo = (nome: string) => {
-    setArquivos((atual) => atual.filter((f) => f.name !== nome))
+  const removerArquivo = (indice: number) => {
+    setArquivos((atual) => atual.filter((_, i) => i !== indice))
   }
 
   const processar = async () => {
     setCarregando(true)
+    setProcessados(0)
     setErro(null)
     try {
-      const formData = new FormData()
-      arquivos.forEach((arquivo) => formData.append("arquivos", arquivo))
+      const resultados: ResultadoDocumento[] = []
+      let totalProcessados = 0
 
-      const resposta = await fetch(`${API_URL}/documents`, {
-        method: "POST",
-        body: formData,
-      })
+      const processarLote = async (lote: File[]): Promise<void> => {
+        const formData = new FormData()
+        lote.forEach((arquivo) => formData.append("arquivos", arquivo))
 
-      if (!resposta.ok) {
-        throw new Error(`Erro ${resposta.status} ao processar documentos`)
+        const resposta = await fetch(`${API_URL}/documents`, {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!resposta.ok) {
+          if ((resposta.status === 400 || resposta.status === 413) && lote.length > 1) {
+            const metade = Math.ceil(lote.length / 2)
+            await processarLote(lote.slice(0, metade))
+            await processarLote(lote.slice(metade))
+            return
+          }
+
+          const corpo = await resposta.text()
+          let detalhe = corpo
+
+          try {
+            const json = JSON.parse(corpo)
+            detalhe = typeof json.detail === "string" ? json.detail : corpo
+          } catch {
+            // Mantém o corpo original quando a resposta não é JSON.
+          }
+
+          const arquivo = lote.length === 1 ? ` (${lote[0].name})` : ""
+          throw new Error(
+            `Erro ${resposta.status} ao processar${arquivo}${detalhe ? `: ${detalhe}` : ""}`
+          )
+        }
+
+        const resultadosLote: ResultadoDocumento[] = await resposta.json()
+        resultados.push(...resultadosLote)
+        totalProcessados += lote.length
+        setProcessados(totalProcessados)
       }
 
-      onProcessado(await resposta.json(), arquivos)
+      for (let inicio = 0; inicio < arquivos.length; inicio += TAMANHO_LOTE) {
+        const lote = arquivos.slice(inicio, inicio + TAMANHO_LOTE)
+        await processarLote(lote)
+      }
+
+      onProcessado(resultados)
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Erro desconhecido")
     } finally {
@@ -94,19 +132,30 @@ export function TelaUpload({ onProcessado }: Props) {
       </Card>
 
       {arquivos.length > 0 && (
-        <ul className="mt-4 space-y-1 text-sm">
-          {arquivos.map((arquivo) => (
-            <li key={arquivo.name} className="flex items-center justify-between">
-              <span>{arquivo.name}</span>
-              <button
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => removerArquivo(arquivo.name)}
+        <details className="mt-4 rounded-md border px-4 py-3 text-sm">
+          <summary className="cursor-pointer select-none font-medium">
+            {arquivos.length} arquivo(s) selecionado(s) — ver lista
+          </summary>
+          <ul className="mt-3 max-h-64 space-y-1 overflow-y-auto pr-2">
+            {arquivos.map((arquivo, indice) => (
+              <li
+                key={`${arquivo.name}-${arquivo.size}-${arquivo.lastModified}-${indice}`}
+                className="flex items-center justify-between gap-4"
               >
-                remover
-              </button>
-            </li>
-          ))}
-        </ul>
+                <span className="truncate" title={arquivo.name}>
+                  {arquivo.name}
+                </span>
+                <button
+                  type="button"
+                  className="shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removerArquivo(indice)}
+                >
+                  remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       {erro && <p className="mt-4 text-sm text-destructive">{erro}</p>}
@@ -116,7 +165,9 @@ export function TelaUpload({ onProcessado }: Props) {
         disabled={arquivos.length === 0 || carregando}
         onClick={processar}
       >
-        {carregando ? "Processando..." : `Processar ${arquivos.length || ""} documento(s)`}
+        {carregando
+          ? `Processando ${processados} de ${arquivos.length}...`
+          : `Processar ${arquivos.length || ""} documento(s)`}
       </Button>
     </div>
   )

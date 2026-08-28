@@ -38,11 +38,10 @@ const CAMPOS: { chave: keyof DocumentoExtraido; rotulo: string }[] = [
 
 type Props = {
   resultados: ResultadoDocumento[]
-  arquivos: File[]
   onVoltar: () => void
 }
 
-export function TelaResultado({ resultados, arquivos, onVoltar }: Props) {
+export function TelaResultado({ resultados, onVoltar }: Props) {
   const [baixando, setBaixando] = useState(false)
   const [erroDownload, setErroDownload] = useState<string | null>(null)
   const sucessos = resultados.filter((r) => r.sucesso).length
@@ -51,16 +50,33 @@ export function TelaResultado({ resultados, arquivos, onVoltar }: Props) {
     setBaixando(true)
     setErroDownload(null)
     try {
-      const formData = new FormData()
-      arquivos.forEach((arquivo) => formData.append("arquivos", arquivo))
+      const documentos = resultados
+        .filter((resultado) => resultado.sucesso)
+        .map((resultado) => ({
+          arquivo: resultado.arquivo,
+          dados: resultado.dados,
+        }))
 
-      const resposta = await fetch(`${API_URL}/documents/export`, {
+      const resposta = await fetch(`${API_URL}/documents/export-results`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(documentos),
       })
 
       if (!resposta.ok) {
-        throw new Error(`Erro ${resposta.status} ao exportar planilha`)
+        const corpo = await resposta.text()
+        let detalhe = corpo
+
+        try {
+          const json = JSON.parse(corpo)
+          detalhe = typeof json.detail === "string" ? json.detail : corpo
+        } catch {
+          // Mantém o corpo original quando a resposta não é JSON.
+        }
+
+        throw new Error(
+          `Erro ${resposta.status} ao exportar planilha${detalhe ? `: ${detalhe}` : ""}`
+        )
       }
 
       const blob = await resposta.blob()

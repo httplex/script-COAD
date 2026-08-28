@@ -4,14 +4,12 @@ import { TelaResultado, type ResultadoDocumento } from "@/components/TelaResulta
 
 function App() {
   const [resultados, setResultados] = useState<ResultadoDocumento[] | null>(null)
-  const [arquivos, setArquivos] = useState<File[]>([])
 
   if (!resultados) {
     return (
       <TelaUpload
-        onProcessado={(resultados, arquivos) => {
+        onProcessado={(resultados) => {
           setResultados(resultados)
-          setArquivos(arquivos)
         }}
       />
     )
@@ -20,7 +18,6 @@ function App() {
   return (
     <TelaResultado
       resultados={resultados}
-      arquivos={arquivos}
       onVoltar={() => setResultados(null)}
     />
   )

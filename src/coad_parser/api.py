@@ -1,8 +1,10 @@
 import io
 import pandas as pd
+from pydantic import BaseModel
 
 from fastapi import FastAPI, File, UploadFile
 from .parser import parse_document
+from .schemas.document_data import DocumentData
 from .utils.path_utils import extrai_sei_do_caminho
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,6 +20,11 @@ app.add_middleware(
 )
 
 TAMANHO_MAXIMO_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+class DocumentoParaExportar(BaseModel):
+    arquivo: str
+    dados: DocumentData
 
 
 @app.post("/documents")
@@ -63,6 +70,20 @@ async def exportar_documentos(arquivos: list[UploadFile] = File(...)) -> Streami
         if resultado["sucesso"]
     ]
 
+    return _criar_planilha(linhas)
+
+
+@app.post("/documents/export-results")
+async def exportar_resultados(documentos: list[DocumentoParaExportar]) -> StreamingResponse:
+    linhas = [
+        {**documento.dados.model_dump(), "arquivo_origem": documento.arquivo}
+        for documento in documentos
+    ]
+
+    return _criar_planilha(linhas)
+
+
+def _criar_planilha(linhas: list[dict]) -> StreamingResponse:
     df = pd.DataFrame(linhas)
     buffer = io.BytesIO()
     df.to_excel(buffer, index=False)
